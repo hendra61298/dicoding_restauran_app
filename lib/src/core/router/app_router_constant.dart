@@ -1,6 +1,7 @@
 enum AppRoute {
   restaurantListScreen,
   detailScreen,
+  searchScreen
 }
 
 extension AppRouteExtension on AppRoute{
@@ -10,6 +11,8 @@ extension AppRouteExtension on AppRoute{
         return 'Restaurant List Screen';
       case AppRoute.detailScreen:
         return 'Detail Screen';
+      case AppRoute.searchScreen:
+        return 'Search Screen';
     }
   }
 
@@ -19,6 +22,8 @@ extension AppRouteExtension on AppRoute{
         return '/restaurant';
       case AppRoute.detailScreen:
         return '/detail';
+      case AppRoute.searchScreen:
+        return '/search';
     }
   }
 }

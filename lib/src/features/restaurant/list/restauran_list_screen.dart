@@ -1,18 +1,22 @@
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dicoding_restaurant_app/src/constant/api_urls.dart';
 import 'package:dicoding_restaurant_app/src/core/router/app_router_constant.dart';
 import 'package:dicoding_restaurant_app/src/domains/entities/restaurant.dart';
+import 'package:dicoding_restaurant_app/src/features/restaurant/list/bloc/restaurant_list_bloc.dart';
+import 'package:dicoding_restaurant_app/src/features/restaurant/list/bloc/restaurant_list_event.dart';
+import 'package:dicoding_restaurant_app/src/features/restaurant/list/bloc/restaurant_list_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:go_router/go_router.dart';
 
-class RestaurantListScreen extends StatefulWidget {
+import '../../../core/get_it/get_it.dart';
+import '../../../domains/repository/restaurant_repository.dart';
+
+class RestaurantListScreen extends StatelessWidget {
   const RestaurantListScreen({Key? key}) : super(key: key);
 
-  @override
-  State<RestaurantListScreen> createState() => _RestaurantListScreenState();
-}
-
-class _RestaurantListScreenState extends State<RestaurantListScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -36,21 +40,37 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                   ),
                 ),
               ),
+              actions: [
+                IconButton(
+                    onPressed: () => GoRouter.of(context).pushNamed(AppRoute.searchScreen.name),
+                    icon: const Icon(Icons.search))
+              ],
             ),
           ),
-          body: FutureBuilder<String>(
-            future:
-            DefaultAssetBundle.of(context).loadString('assets/json_data/restaurant.json'),
-            builder: (context, snapshot){
-              final List<Restaurant> restaurant = parseRestaurant(snapshot.data);
-                return ListView.builder(
-                  itemCount: restaurant.length ,
-                  itemBuilder: (context, index) {
-                  return _buildRestaurantCard(context, restaurant[index]);
-                },
-              );
-            },
-          ),
+          body: BlocProvider(
+            create: (context) => getIt<RestaurantListBloc>()..add(RestaurantListEventGetList()),
+            child: BlocBuilder<RestaurantListBloc,RestaurantListState>(
+              builder: (context,state){
+                if(state is RestaurantListStateSuccess){
+                 return ListView.builder(
+                   itemCount: state.count,
+                   itemBuilder: (context,index){
+                     return _buildRestaurantCard(context, state.listRestaurant[index]);
+                   }
+                 );
+                }else if (state is RestaurantListStateError){
+                  return Center(
+                    child: Text(state.error.toString()),
+                  );
+                }
+                else {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+              },
+            )
+            )
         ));
   }
 
@@ -59,7 +79,7 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
       onTap: (){
         GoRouter.of(context).pushNamed(
           AppRoute.detailScreen.name,
-          extra: restaurant
+          extra: restaurant.id
         );
       },
       child: SizedBox(
@@ -80,9 +100,9 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                     padding: const EdgeInsets.only(left:10,top: 12),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                          restaurant.pictureId!,
+                      child: CachedNetworkImage(
                           fit: BoxFit.fill,
+                          imageUrl: ApiUrls.pictureUrl+restaurant.pictureId!,
                         ),
                     ),
                   ),
